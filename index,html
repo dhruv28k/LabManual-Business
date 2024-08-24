@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Order Management System</title>
+    <style>
+        
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            margin: 0;
+            padding: 0;
+        }
+
+        .container {
+            width: 80%;
+            margin: 50px auto;
+            background: #fff;
+            padding: 20px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+
+        h1,
+        h2 {
+            text-align: center;
+        }
+
+        form {
+            display: flex;
+            flex-direction: column;
+        }
+
+        label {
+            margin-top: 10px;
+        }
+
+        input,
+        textarea,
+        select {
+            padding: 10px;
+            margin-top: 5px;
+            font-size: 16px;
+        }
+
+        button {
+            margin-top: 20px;
+            padding: 10px;
+            font-size: 18px;
+            background-color: #28a745;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background-color: #218838;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+
+        th,
+        td {
+            border: 1px solid #ddd;
+            padding: 10px;
+            text-align: center;
+        }
+
+        th {
+            background-color: #f2f2f2;
+        }
+
+        .status-btn {
+            padding: 5px 10px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            cursor: pointer;
+            margin-top: 5px;
+        }
+
+        .status-btn:hover {
+            background-color: #0056b3;
+        }
+
+        .checkbox-container {
+            margin-top: 10px;
+        }
+
+        .checkbox-container input {
+            margin-right: 5px;
+        }
+
+
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <h1>Order Management System</h1>
+        <form id="orderForm">
+            <label for="name">Customer Name:</label>
+            <input type="text" id="name" required>
+
+            <label for="payment">Payment Amount:</label>
+            <select id="payment" required>
+                <option value="240">240</option>
+                <option value="270">270</option>
+            </select>
+
+            <label for="order">Order Details:</label>
+            <textarea id="order" rows="3" required></textarea>
+
+            <div class="checkbox-container">
+                <label for="shareUpdate">
+                    <input type="checkbox" id="shareUpdate"> Share update for payment with customer
+                </label>
+            </div>
+
+            <button type="submit">Add Order</button>
+        </form>
+
+        <h2>Order List</h2>
+        <table id="orderTable">
+            <thead>
+                <tr>
+                    <th>Customer Name</th>
+                    <th>Payment</th>
+                    <th>Order Details</th>
+                    <th>Payment Status</th>
+                    <th>Printing Status</th>
+                    <th>Share Update</th>
+                </tr>
+            </thead>
+            <tbody>
+                <!-- Orders will be added here dynamically -->
+            </tbody>
+        </table>
+
+        <button id="exportCsvBtn">Export Data as CSV</button>
+    </div>
+
+    <script>
+        document.getElementById('orderForm').addEventListener('submit', function (e) {
+            e.preventDefault();
+
+            // Get the input values
+            const name = document.getElementById('name').value;
+            const payment = document.getElementById('payment').value;
+            const order = document.getElementById('order').value;
+            const shareUpdate = document.getElementById('shareUpdate').checked ? 'Yes' : 'No';
+
+            // Create an object to store the order details
+            const orderData = {
+                name,
+                payment,
+                order,
+                paymentStatus: 'Pending',
+                printingStatus: 'Remaining',
+                shareUpdate
+            };
+
+            // Get existing orders from local storage or initialize an empty array
+            let orders = JSON.parse(localStorage.getItem('orders')) || [];
+
+            // Add the new order to the array
+            orders.push(orderData);
+
+            // Save the updated orders array back to local storage
+            localStorage.setItem('orders', JSON.stringify(orders));
+
+            // Update the table with the new data
+            updateTable();
+
+            // Clear the form
+            document.getElementById('orderForm').reset();
+        });
+
+        function updateTable() {
+            const tableBody = document.getElementById('orderTable').getElementsByTagName('tbody')[0];
+            tableBody.innerHTML = ''; // Clear the current table contents
+
+            // Get orders from local storage
+            let orders = JSON.parse(localStorage.getItem('orders')) || [];
+
+            // Populate the table with each order
+            orders.forEach((orderData, index) => {
+                const newRow = tableBody.insertRow();
+
+                const nameCell = newRow.insertCell(0);
+                const paymentCell = newRow.insertCell(1);
+                const orderCell = newRow.insertCell(2);
+                const paymentStatusCell = newRow.insertCell(3);
+                const printingStatusCell = newRow.insertCell(4);
+                const shareUpdateCell = newRow.insertCell(5);
+
+                nameCell.textContent = orderData.name;
+                paymentCell.textContent = orderData.payment;
+                orderCell.textContent = orderData.order;
+
+                // Payment Status Button
+                const paymentStatusBtn = document.createElement('button');
+                paymentStatusBtn.textContent = orderData.paymentStatus;
+                paymentStatusBtn.classList.add('status-btn');
+                paymentStatusBtn.addEventListener('click', () => {
+                    orderData.paymentStatus = orderData.paymentStatus === 'Pending' ? 'Received' : 'Pending';
+                    orders[index] = orderData;
+                    localStorage.setItem('orders', JSON.stringify(orders));
+                    updateTable();
+                });
+                paymentStatusCell.appendChild(paymentStatusBtn);
+
+                // Printing Status Button
+                const printingStatusBtn = document.createElement('button');
+                printingStatusBtn.textContent = orderData.printingStatus;
+                printingStatusBtn.classList.add('status-btn');
+                printingStatusBtn.addEventListener('click', () => {
+                    orderData.printingStatus = orderData.printingStatus === 'Remaining' ? 'Completed' : 'Remaining';
+                    orders[index] = orderData;
+                    localStorage.setItem('orders', JSON.stringify(orders));
+                    updateTable();
+                });
+                printingStatusCell.appendChild(printingStatusBtn);
+
+                // Share Update Checkbox
+                const shareUpdateCheckbox = document.createElement('input');
+                shareUpdateCheckbox.type = 'checkbox';
+                shareUpdateCheckbox.disabled = false; // Make checkbox interactive
+                shareUpdateCheckbox.checked = orderData.shareUpdate === 'Yes';
+                shareUpdateCheckbox.addEventListener('change', (e) => {
+                    orderData.shareUpdate = e.target.checked ? 'Yes' : 'No';
+                    orders[index] = orderData;
+                    localStorage.setItem('orders', JSON.stringify(orders));
+                });
+                shareUpdateCell.appendChild(shareUpdateCheckbox);
+            });
+        }
+
+        document.getElementById('exportCsvBtn').addEventListener('click', function () {
+            const orders = JSON.parse(localStorage.getItem('orders')) || [];
+            let csvContent = "data:text/csv;charset=utf-8,";
+            csvContent += "Customer Name,Payment,Order Details,Payment Status,Printing Status,Share Update\n";
+
+            orders.forEach(orderData => {
+                const row = [
+                    orderData.name,
+                    orderData.payment,
+                    orderData.order,
+                    orderData.paymentStatus,
+                    orderData.printingStatus,
+                    orderData.shareUpdate
+                ].join(",");
+                csvContent += row + "\n";
+            });
+
+            const encodedUri = encodeURI(csvContent);
+            const link = document.createElement("a");
+            link.setAttribute("href", encodedUri);
+            link.setAttribute("download", "orders_data.csv");
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        });
+
+        // Call updateTable when the page loads to display saved data
+        window.onload = updateTable;
+    </script>
+</body>
+
+</html>
